@@ -1,6 +1,6 @@
 import React from 'react';
-import Mapdata from './Mapdata';
+import Mapweb from './Mapdata';
 
 export default function Map() {
-    return <Mapdata />;
+    return <Mapweb />;
 }
