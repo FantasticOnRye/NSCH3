@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "NSCH3",
+    "slug": "NSCH3",
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDgK7V1eluJynhFtdXj7O-A_fd0LPTJlzs"
+        }
+      }
+    },
+    "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyDgK7V1eluJynhFtdXj7O-A_fd0LPTJlzs"
+      }
+    }
+  }
+}
