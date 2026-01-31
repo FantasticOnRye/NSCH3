@@ -1,19 +1,33 @@
-import React from 'react';
-import ReactMapGL from 'react-map-gl';
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 
-export default function Mapweb() {
-    const [viewport, setViewport] = React.useState({
-        latitude: 42.7302,
-        longitude: -73.6788,
-        zoom: 10,
-        width: '100vw',
-        height: '100vh'
-    });
-    return (
-        <ReactMapGL
-            {...viewport}
-            mapboxApiAccessToken= "pk.eyJ1IjoiamVyb2xkYjI2IiwiYSI6ImNtbDJya3F1eDBsdmEzZXB2anZwenIyZWsifQ.sfgcWkKJzOxdJ8ANh7gseg"
-            onViewportChange={next => setViewport(next)}
+export default function MapScreen() {
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: 40.4433,
+          longitude: -79.9436,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+      >
+        <Marker
+          coordinate={{ latitude: 40.4433, longitude: -79.9436 }}
+          title="Sample Location"
         />
-    );
+      </MapView>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+});
