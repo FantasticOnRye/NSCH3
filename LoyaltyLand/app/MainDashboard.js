@@ -1,9 +1,5 @@
 import { doc, onSnapshot } from 'firebase/firestore';
-<<<<<<< HEAD
-import { db } from '../constants/firebaseConfig';
-=======
 import { db, auth } from '../constants/firebaseConfig';
->>>>>>> 063a86edace1af7a4383d98b26dd01357dbb5d1f
 import * as Location from 'expo-location';
 
 export const UserWallet = ({ userId }) => {
