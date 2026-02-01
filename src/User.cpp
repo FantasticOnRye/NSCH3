@@ -7,19 +7,39 @@ static BLEUUID charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 BLEAdvertisedDevice* targetDevice = nullptr;
 bool doConnect = false;
 
-// Handle messages sent back from the Company
+// Device tracking (Up to 10)
+String foundAddresses[10];
+int deviceCount = 0;
+bool firstmessage=true;
+// Notification callback: The "Gatekeeper"
 static void notifyCallback(BLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
-    Serial.print("Update from Company: ");
-    Serial.write(pData, length);
-    Serial.println();
+    String message = "";
+    for (size_t i = 0; i < length; i++) {
+        message += (char)pData[i];
+    }
+
+    // BLOCKING LOGIC: Only process/print if it's Ultra Close
+    if ((message.indexOf("ULTRA_CLOSE_PROXIMITY") != -1)|| firstmessage==true) {
+        Serial.println(">>> [AUTHORIZED MESSAGE]: " + message);
+        firstmessage=false;
+    } else {
+        // We do nothing here. The message is "blocked" from the user's view.
+        // Serial.println("... filtering weak signal packet ..."); 
+    }
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     void onResult(BLEAdvertisedDevice advertisedDevice) {
         if (advertisedDevice.getName() == "COMPANY_DEVICE") {
-            if (advertisedDevice.getRSSI() > -70) { // Only connect if signal is decent
+            if (advertisedDevice.getRSSI() > -70) {
+                // Tracking the last 10 devices seen
+                String addr = advertisedDevice.getAddress().toString().c_str();
+                foundAddresses[deviceCount % 10] = addr; 
+                deviceCount++;
+
                 advertisedDevice.getScan()->stop();
                 targetDevice = new BLEAdvertisedDevice(advertisedDevice);
+                firstmessage=true;
                 doConnect = true;
             }
         }
@@ -28,7 +48,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
     Serial.begin(115200);
-    Serial.println("User Booting...");
     BLEDevice::init("USER_DEVICE");
 
     BLEScan* pBLEScan = BLEDevice::getScan();
@@ -36,7 +55,7 @@ void setup() {
     pBLEScan->setInterval(1349);
     pBLEScan->setWindow(449);
     pBLEScan->setActiveScan(true);
-    pBLEScan->start(0, false); 
+    pBLEScan->start(0, false);
     Serial.println("Scanning...");
 }
 
@@ -44,26 +63,42 @@ void loop() {
     if (doConnect && targetDevice != nullptr) {
         BLEClient* pClient = BLEDevice::createClient();
         if (pClient->connect(targetDevice)) {
-            Serial.println("Connected!");
+            Serial.println("Connected. Reporting RSSI...");
             pClient->setMTU(517);
 
             BLERemoteService* pService = pClient->getService(serviceUUID);
             if (pService != nullptr) {
                 BLERemoteCharacteristic* pChar = pService->getCharacteristic(charUUID);
                 if (pChar != nullptr) {
-                    if (pChar->canNotify()) pChar->registerForNotify(notifyCallback);
+                    delay(500); // Wait for handshake
+
+                    // Force the descriptor discovery to clear the error
+                    pChar->getDescriptor(BLEUUID((uint16_t)0x2902)); 
+
+                    if (pChar->canNotify()) {
+                        pChar->registerForNotify(notifyCallback);
+                        Serial.println(">>> Subscribed successfully.");
+                    }
 
                     while (pClient->isConnected()) {
                         int rssi = pClient->getRssi();
-                        String rssiVal = String(rssi);
-                        pChar->writeValue(rssiVal.c_str(), rssiVal.length());
-                        Serial.printf("Sent RSSI: %d\n", rssi);
-                        delay(1000);
+                        
+                        // Only write if the characteristic allows it
+                        if (pChar->canWrite()) {
+                            String rssiVal = String(rssi);
+                            pChar->writeValue(rssiVal.c_str(), rssiVal.length());
+                            //Serial.printf("Sent RSSI: %d\n", rssi); // Confirming send
+                        } else {
+                            Serial.println("Error: Cannot write to characteristic.");
+                        }
+                        
+                        delay(1000); 
                     }
                 }
             }
         }
-        Serial.println("Disconnected. Resuming Scan...");
+        
+        // Cleanup if connection drops
         delete targetDevice;
         targetDevice = nullptr;
         doConnect = false;

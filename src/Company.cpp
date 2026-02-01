@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
-
+#include <BLE2902.h>
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
@@ -25,7 +25,7 @@ class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
             String response = "";
 
             // Decision Logic based on RSSI
-            if (rssi > -45) response = "DATA_PACKET: ULTRA_CLOSE_PROXIMITY";
+            if (rssi > -20) response = "DATA_PACKET: ULTRA_CLOSE_PROXIMITY";
             else if (rssi > -60) response = "DATA_PACKET: STANDARD_ZONE";
             else response = "DATA_PACKET: WEAK_SIGNAL_IDLE";
 
@@ -38,6 +38,7 @@ class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
 
 void setup() {
     Serial.begin(115200);
+    pinMode(18, OUTPUT);
     BLEDevice::init("COMPANY_DEVICE");
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(new MyServerCallbacks());
@@ -49,6 +50,9 @@ void setup() {
                         BLECharacteristic::PROPERTY_WRITE |
                         BLECharacteristic::PROPERTY_NOTIFY
                       );
+
+    // THIS LINE IS CRITICAL FOR NOTIFICATIONS TO WORK
+    pCharacteristic->addDescriptor(new BLE2902()); 
 
     pCharacteristic->setCallbacks(new MyCharacteristicCallbacks());
     pService->start();
