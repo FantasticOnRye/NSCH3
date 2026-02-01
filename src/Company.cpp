@@ -26,18 +26,15 @@ class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
             String response = "";
 
             // Decision Logic based on RSSI
-            if (rssi > -20) {
+            if (rssi > -38) {
                response = "DATA_PACKET: ULTRA_CLOSE_PROXIMITY | POINTS:" + String(pointsToGive);
                Serial2.print('O');
             }
-            else if (rssi > -60){
+            else if (rssi < -38){
                 response = "DATA_PACKET: STANDARD_ZONE";
-                Serial2.print('G');
+                Serial2.print('W');
             } 
-            else {
-                response = "DATA_PACKET: WEAK_SIGNAL_IDLE";
-                  Serial2.print('O');
-            }
+            
 
             pCharacteristic->setValue(response.c_str());
             pCharacteristic->notify(); // Push the response to the User

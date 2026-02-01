@@ -18,6 +18,7 @@ static void notifyCallback(BLERemoteCharacteristic* pChar, uint8_t* pData, size_
     for (size_t i = 0; i < length; i++) message += (char)pData[i];
 
     if ((message.indexOf("ULTRA_CLOSE_PROXIMITY") != -1) || firstmessage == true) {
+        digitalWrite(26, HIGH);
         Serial.println(">>> [AUTHORIZED MESSAGE]: " + message);
         
         // --- NEW POINT LOGIC ---
@@ -43,7 +44,9 @@ static void notifyCallback(BLERemoteCharacteristic* pChar, uint8_t* pData, size_
         
         firstmessage = false;
     }
+digitalWrite(26, LOW);
 }
+
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     void onResult(BLEAdvertisedDevice advertisedDevice) {
         if (advertisedDevice.getName() == "COMPANY_DEVICE") {
@@ -65,7 +68,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 void setup() {
     Serial.begin(115200);
     BLEDevice::init("USER_DEVICE");
-
+    pinMode(27, OUTPUT);
+    pinMode(26, OUTPUT);
     BLEScan* pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setInterval(1349);
@@ -81,8 +85,9 @@ void loop() {
         if (pClient->connect(targetDevice)) {
             Serial.println("Connected. Reporting RSSI...");
             pClient->setMTU(517);
-
+            digitalWrite(27, HIGH);
             BLERemoteService* pService = pClient->getService(serviceUUID);
+
             if (pService != nullptr) {
                 BLERemoteCharacteristic* pChar = pService->getCharacteristic(charUUID);
                 if (pChar != nullptr) {
@@ -116,6 +121,7 @@ void loop() {
         
         // Cleanup if connection drops
         delete targetDevice;
+        digitalWrite(27, LOW);
         targetDevice = nullptr;
         // Put this at the very bottom of the loop() block
         pointAwarded = false; 
