@@ -12,6 +12,7 @@ import { useAuthStore, UserRole } from '../store/authStore';
 interface PersonalProfileData {
   username: string;
   email: string;
+  preferredStore?: string;
 }
 
 interface BusinessProfileData {
@@ -37,7 +38,13 @@ export async function signUp(
       await setDoc(doc(db, 'users', user.uid), {
         username: data.username,
         email: data.email,
+        preferredStore: data.preferredStore || null,
         points: 0,
+        pointsWallet: {
+          locked: {},
+          universal: 0,
+          designated: {},
+        },
         createdAt: new Date().toISOString(),
       });
     } else {

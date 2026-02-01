@@ -5,8 +5,12 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#d6001c';
 const tintColorDark = '#fff';
+
+// Brand Colors
+export const ACCENT_COLOR = '#d6001c';
+export const ORB_COLOR = '#d6001c';
 
 export const Colors = {
   light: {
@@ -16,6 +20,7 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    accent: ACCENT_COLOR,
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +29,7 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    accent: ACCENT_COLOR,
   },
 };
 
