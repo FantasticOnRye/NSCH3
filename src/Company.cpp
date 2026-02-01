@@ -7,7 +7,8 @@
 
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
-
+// How many points to send during Ultra Proximity
+int pointsToGive = -3;
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) { deviceConnected = true; };
     void onDisconnect(BLEServer* pServer) {
@@ -25,9 +26,18 @@ class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
             String response = "";
 
             // Decision Logic based on RSSI
-            if (rssi > -20) response = "DATA_PACKET: ULTRA_CLOSE_PROXIMITY";
-            else if (rssi > -60) response = "DATA_PACKET: STANDARD_ZONE";
-            else response = "DATA_PACKET: WEAK_SIGNAL_IDLE";
+            if (rssi > -20) {
+               response = "DATA_PACKET: ULTRA_CLOSE_PROXIMITY | POINTS:" + String(pointsToGive);
+               Serial2.print('O');
+            }
+            else if (rssi > -60){
+                response = "DATA_PACKET: STANDARD_ZONE";
+                Serial2.print('G');
+            } 
+            else {
+                response = "DATA_PACKET: WEAK_SIGNAL_IDLE";
+                  Serial2.print('O');
+            }
 
             pCharacteristic->setValue(response.c_str());
             pCharacteristic->notify(); // Push the response to the User
@@ -38,7 +48,9 @@ class MyCharacteristicCallbacks: public BLECharacteristicCallbacks {
 
 void setup() {
     Serial.begin(115200);
-    pinMode(18, OUTPUT);
+    Serial2.begin(9600, SERIAL_8N1, 16, 17);
+    pinMode(27, OUTPUT);
+    pinMode(26, OUTPUT);
     BLEDevice::init("COMPANY_DEVICE");
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(new MyServerCallbacks());

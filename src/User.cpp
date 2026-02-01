@@ -3,7 +3,8 @@
 
 static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
 static BLEUUID charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
-
+int userPoints = 0;       // The total points stored on the device
+bool pointAwarded = false; // Prevents spamming points while standing still
 BLEAdvertisedDevice* targetDevice = nullptr;
 bool doConnect = false;
 
@@ -14,20 +15,35 @@ bool firstmessage=true;
 // Notification callback: The "Gatekeeper"
 static void notifyCallback(BLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
     String message = "";
-    for (size_t i = 0; i < length; i++) {
-        message += (char)pData[i];
-    }
+    for (size_t i = 0; i < length; i++) message += (char)pData[i];
 
-    // BLOCKING LOGIC: Only process/print if it's Ultra Close
-    if ((message.indexOf("ULTRA_CLOSE_PROXIMITY") != -1)|| firstmessage==true) {
+    if ((message.indexOf("ULTRA_CLOSE_PROXIMITY") != -1) || firstmessage == true) {
         Serial.println(">>> [AUTHORIZED MESSAGE]: " + message);
-        firstmessage=false;
-    } else {
-        // We do nothing here. The message is "blocked" from the user's view.
-        // Serial.println("... filtering weak signal packet ..."); 
+        
+        // --- NEW POINT LOGIC ---
+        // Look for the "POINTS:" marker in the message
+    int pointIndex = message.indexOf("POINTS:");
+    
+    if (pointIndex != -1 && !pointAwarded) {
+        // Extract the number string after "POINTS:"
+        String pointVal = message.substring(pointIndex + 7); 
+        
+        // .toInt() automatically handles "-" for negative numbers
+        int receivedPoints = pointVal.toInt(); 
+        
+        userPoints += receivedPoints;
+        if (userPoints < 0) userPoints = 0;
+        pointAwarded = true; 
+
+        Serial.print(">>> POINT ADJUSTMENT: ");
+        Serial.print(receivedPoints);
+        Serial.print(" | NEW TOTAL: ");
+        Serial.println(userPoints);
+    }
+        
+        firstmessage = false;
     }
 }
-
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     void onResult(BLEAdvertisedDevice advertisedDevice) {
         if (advertisedDevice.getName() == "COMPANY_DEVICE") {
@@ -101,6 +117,10 @@ void loop() {
         // Cleanup if connection drops
         delete targetDevice;
         targetDevice = nullptr;
+        // Put this at the very bottom of the loop() block
+        pointAwarded = false; 
+        doConnect = false;
+        BLEDevice::getScan()->start(0, false);
         doConnect = false;
         BLEDevice::getScan()->start(0, false);
     }
